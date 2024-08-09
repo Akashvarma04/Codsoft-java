@@ -1,0 +1,89 @@
+import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class QuizApplication {
+    
+    static class Question {
+        String question;
+        String[] options;
+        char answer;
+
+        Question(String question, String[] options, char answer) {
+            this.question = question;
+            this.options = options;
+            this.answer = answer;
+        }
+    }
+
+    private static void displayQuestion(Question question) {
+        System.out.println(question.question);
+        for (int i = 0; i < question.options.length; i++) {
+            System.out.println(question.options[i]);
+        }
+    }
+
+    private static boolean askQuestion(Question question, int timeLimit) {
+        final AtomicBoolean answered = new AtomicBoolean(false);
+        Timer timer = new Timer();
+        
+        // Schedule a task to end the quiz after the time limit
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (!answered.get()) {
+                    System.out.println("\nTime's up!");
+                    answered.set(true);
+                }
+            }
+        }, timeLimit * 1000); // Convert seconds to milliseconds
+
+        Scanner scanner = new Scanner(System.in);
+        char userAnswer = ' ';
+
+        while (!answered.get()) {
+            System.out.print("Enter your answer (A, B, C, D): ");
+            if (scanner.hasNext()) {
+                userAnswer = scanner.next().toUpperCase().charAt(0);
+                answered.set(true);
+            }
+        }
+
+        timer.cancel(); // Cancel the timer if the user answered before time ran out
+        return userAnswer == question.answer;
+    }
+
+    private static void displayResults(int score, int totalQuestions) {
+        System.out.println("\nQuiz completed!");
+        System.out.println("Your score is " + score + " out of " + totalQuestions + ".");
+    }
+
+    public static void main(String[] args) {
+        Question[] questions = {
+            new Question("What is the capital of France?",
+                    new String[] {"A. Berlin", "B. Madrid", "C. Paris", "D. Rome"},
+                    'C'),
+            new Question("Which planet is known as the Red Planet?",
+                    new String[] {"A. Earth", "B. Mars", "C. Jupiter", "D. Venus"},
+                    'B')
+            // Add more questions as needed
+        };
+
+        int timeLimit = 10; // seconds per question
+        int score = 0;
+
+        for (Question question : questions) {
+            displayQuestion(question);
+            boolean isCorrect = askQuestion(question, timeLimit);
+            if (isCorrect) {
+                System.out.println("Correct!");
+                score++;
+            } else {
+                System.out.println("Incorrect. The correct answer was " + question.answer);
+            }
+        }
+
+        displayResults(score, questions.length);
+    }
+}
